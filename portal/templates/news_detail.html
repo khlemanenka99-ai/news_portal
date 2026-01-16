@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}{{ news.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <h2>{{ news.title }}</h2>
+        {% if news.image_url %}
+        <img src="{{ news.image_url }}" alt="{{ news.title }}" class="news-image mx-auto d-block"
+             style="max-width: 100%; height: auto;">
+        {% else %}
+        <img src="{% static 'no-image.png' %}" class="img-fluid rounded shadow-sm mx-auto d-block" alt="Нет фото"
+             style="max-width: 100%; height: auto;">
+        {% endif %}
+        <p class="card-text">{{ news.content }}</p>
+<h2 class="mt-4 mb-4">Комментарии:</h2>
+
+{% if news.comments_set.all %}
+    <div class="list-group mb-4">
+        {% for comment in news.comments_set.all %}
+            <div class="list-group-item list-group-item-light mb-2">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ comment.author|default:"Аноним" }}</h5>
+                    <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
+                </div>
+                <p class="mb-1">{{ comment.comments }}</p>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info" role="alert">
+        Нет комментариев. Будьте первым, кто оставит отзыв!
+    </div>
+{% endif %}
+
+<h3 class="mt-5 mb-3">Добавить комментарий</h3>
+<form method="post" class="mb-5">
+    {% csrf_token %}
+    <div class="card card-body bg-light">
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary mt-3">Отправить комментарий</button>
+    </div>
+</form>
+        <a href="{% url 'news' %}" class="btn btn-outline-secondary mt-2">Назад к новостям</a>
+    </div>
+</div>
+{% endblock %}
