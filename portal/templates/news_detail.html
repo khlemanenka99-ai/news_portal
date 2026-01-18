@@ -18,18 +18,16 @@
         <p class="card-text">{{ news.content }}</p>
 <h2 class="mt-4 mb-4">Комментарии:</h2>
 
-{% if news.comments_set.all %}
-    <div class="list-group mb-4">
-        {% for comment in news.comments_set.all %}
-            <div class="list-group-item list-group-item-light mb-2">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ comment.author|default:"Аноним" }}</h5>
-                    <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
-                </div>
-                <p class="mb-1">{{ comment.comments }}</p>
-            </div>
-        {% endfor %}
+{% if comments %}
+    {% for comment in comments %}
+    <div class="border-bottom pb-3 mb-3">
+        <div class="small text-muted mb-1">
+            <strong>{{ comment.author|default:"Аноним" }}</strong>
+            · {{ comment.date_created|date:"d.m.Y H:i" }}
+        </div>
+        <div>{{ comment.comments }}</div>
     </div>
+    {% endfor %}
 {% else %}
     <div class="alert alert-info" role="alert">
         Нет комментариев. Будьте первым, кто оставит отзыв!

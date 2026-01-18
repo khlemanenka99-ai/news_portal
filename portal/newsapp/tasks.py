@@ -5,12 +5,14 @@ import logging
 import requests
 from django.core.cache import cache
 import time
+
+from django.utils import timezone
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from .models import News
+from .models import News, Category
 
 # celery -A portal worker --loglevel=info команда для запуска воркера
 # celery -A portal beat --loglevel=info команда для запуска расписания для воркера
@@ -72,68 +74,94 @@ def fetch_weather(self):
         raise self.retry(exc=e)
 
 
-
 @shared_task(bind=True, max_retries=5, default_retry_delay=10)
 def news_pars(self):
     logger.info("Запуск задачи парсинга новостей")
-    try:
-        driver = webdriver.Chrome()
-        driver.get("https://people.onliner.by/")
+    sources = [
+        ("https://people.onliner.by/", 3),
+        ("https://auto.onliner.by/", 4),
+        ("https://tech.onliner.by/", 5),
+        ("https://realt.onliner.by/", 6),
+        ("https://money.onliner.by/", 7)
+    ]
+    driver = None
+    for url, category_id in sources:
+        try:
+            driver = webdriver.Chrome()
+            driver.get(url)
 
-        # Ждем чтобы страница полностью загрузилась
-        time.sleep(3)
-        wait = WebDriverWait(driver, 10)
+            # Ждем чтобы страница полностью загрузилась
+            time.sleep(3)
+            wait = WebDriverWait(driver, 10)
 
-        title_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.news-tidings__link")))
-        # Скроллим в видимую часть через JS
-        driver.execute_script("arguments[0].scrollIntoView(true);", title_link)
-        time.sleep(2)
-        # Кликаем через JS
-        driver.execute_script("arguments[0].click();", title_link)
-    except Exception as e:
-        logger.error(f"Ошибка при поиске или клике: {e}")
-        raise self.retry(exc=e)
+            news_block = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".news-tidings__link"))
+            )
+            title_link = news_block.find_element(By.CSS_SELECTOR, "a.news-tidings__stub, a.news-tiles__stub")
+            # Скроллим в видимую часть через JS
+            driver.execute_script("arguments[0].scrollIntoView(true);", title_link)
+            time.sleep(2)
+            # Кликаем через JS
+            driver.execute_script("arguments[0].click();", title_link)
 
-    time.sleep(3)
+            time.sleep(3)
 
-    try:
-        titles = driver.find_elements(By.TAG_NAME, "h1")
-        title_text = None
-        if titles:
-            title_text = titles[0].text
-        else:
-            logger.warning("Заголовок h1 не найден")
+            # Поиск заголовка
+            try:
+                titles = driver.find_elements(By.TAG_NAME, "h1")
+                if titles:
+                    title_text = titles[0].text.strip()
+                else:
+                    raise ValueError("Заголовок не найден")
+            except Exception as e:
+                logger.error(f"Ошибка при поиске заголовка: {e}")
+                raise
 
-        # Получение стиля и извлечение URL
-        div_element = driver.find_element(By.CLASS_NAME, 'news-header__image')
-        style_attribute = div_element.get_attribute('style')
-        # получение url с помощью регулярки
-        match = re.search(r'"\s*(https?://[^\s"]+)\s*"', style_attribute)
-        if match:
-            image_url = match.group(1)
-        else:
-            logger.error("URL изображения не найден")
-            image_url = None
+            # Поиск изображения
+            try:
+                div_element = driver.find_element(By.CLASS_NAME, 'news-header__image')
+                style_attribute = div_element.get_attribute('style')
+                match = re.search(r'"\s*(https?://[^\s"]+)\s*"', style_attribute)
+                if match:
+                    image_url = match.group(1)
+                    logger.info(f"Найдено изображение: {image_url}")
+                else:
+                    logger.warning("URL изображения не найден")
+                    image_url = ""
+            except Exception as e:
+                logger.warning(f"Ошибка при поиске изображения: {e}")
+                image_url = ""
 
-        # Получение текста (абзацев)
-        paragraphs = driver.find_elements(By.TAG_NAME, "p")
-        content_texts = [p.text for p in paragraphs]
-    except Exception as e:
-        logger.error(f"Ошибка в блоке поиска тегов: {e}")
+            # Поиск контента
+            try:
+                paragraphs = driver.find_elements(By.TAG_NAME, "p")
+                content_texts = [p.text.strip() for p in paragraphs if p.text.strip()]
+                content_text = " ".join(content_texts)
+                logger.info(f"Найдено {len(content_texts)} абзацев текста")
+            except Exception as e:
+                logger.error(f"Ошибка при поиске контента: {e}")
+                raise
 
-    try:
-        existing_news, created = News.objects.update_or_create(
-            title=title_text if title_text else '',
-            defaults={
-                'image_url': image_url if image_url else '',
-                'content': ' '.join(content_texts),
-                'is_approved': True,
-            }
-        )
-        if created:
-            logger.info("Создана новая новость.")
-        else:
-            logger.info("Обновлена существующая новость.")
-    except Exception as e:
-        logger.error(f"Ошибка при сохранении новости: {e}")
-    driver.quit()
+            # Сохранение в базу данных
+            try:
+                category_obj = Category.objects.get(id=category_id)
+                existing_news, created = News.objects.update_or_create(
+                    title=title_text,
+                    defaults={
+                        'image_url': image_url,
+                        'content': content_text,
+                        'category': category_obj,
+                        'is_approved': True,
+                        'date_updated': timezone.now()
+                    }
+                )
+            except Exception as e:
+                logger.error(f"Ошибка при сохранении новости в БД: {e}", exc_info=True)
+                raise
+
+        except Exception as e:
+            logger.error(f"Ошибка в задаче парсинга: {e}", exc_info=True)
+            # Пробрасываем исключение для retry механизма Celery
+            raise self.retry(exc=e)
+        finally:
+            driver.quit()

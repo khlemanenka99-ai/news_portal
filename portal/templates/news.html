@@ -6,10 +6,14 @@
 
 {% block content %}
 <h1 class="mb-4">Актуальное</h1>
-<p>Курсы валют: 1USD = {{ rate_usd|default:"Данные недоступны" }};
-    1EUR = {{ rate_eur|default:"Данные недоступны" }};
-    100RUB = {{ rate_rub|default:"Данные недоступны" }}
+{% if rate_usd %}
+<p>Курсы валют: 1USD = {{ rate_usd }};
+    1EUR = {{ rate_eur }};
+    100RUB = {{ rate_rub }}
 </p>
+      {% else %}
+      <p class="mb-0 fst-italic">Данные о курсе валют недоступны</p>
+      {% endif %}
 {% if weather_minsk %}
 <p>
     Погода в Минске: {{ weather_minsk.temperature }}°C, ветер {{ weather_minsk.windspeed }} м/с,
@@ -38,7 +42,7 @@
     {% endif %}
 </p>
       {% else %}
-      <p class="mb-0 fst-italic text-light">Данные о погоде недоступны</p>
+      <p class="mb-0 fst-italic">Данные о погоде недоступны</p>
       {% endif %}
 
 <!-- Фильтр по категориям -->
@@ -82,6 +86,7 @@
         {% else %}
         <img src="{% static 'no-image.png' %}" class="img-fluid rounded shadow-sm" alt="Нет фото">
         {% endif %}
+        👁️ {{ news_item.views }} просмотров
         <p class="card-text">{{ news_item.content|truncatewords:25 }}</p>
         <p class="category">
             Категория:
@@ -92,7 +97,7 @@
             {% endif %}
         </p>
         <p class="category">
-            Дата: {{ news_item.date_created|date:"d F Y, H:i" }}
+            Дата: {{ news_item.date_updated|date:"d F Y, H:i" }}
         </p>
 
     </div>

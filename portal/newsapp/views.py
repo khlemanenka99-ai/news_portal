@@ -2,8 +2,8 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegisterForm, NewsForm, CommentsForm
-from .models import Category, News
-from django.db.models import Q
+from .models import Category, News, Comments
+from django.db.models import Q, F
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 
@@ -39,7 +39,7 @@ def news_view(request):
     rate_eur = cache.get('euro_to_byn_rate')
     rate_rub = cache.get('ruble_to_byn_rate')
     weather_minsk = cache.get('current_weather_minsk')
-    news_n = news.order_by('-date_created')
+    news_n = news.order_by('-date_updated')
     return render(request, 'news.html', {
         'news': news_n,
         'categories': categories,
@@ -53,6 +53,7 @@ def news_view(request):
 
 def news_detail(request, pk):
     news = get_object_or_404(News, pk=pk)
+    comments = Comments.objects.filter(news=news).order_by('-date_created')
     if request.method == 'POST':
         form = CommentsForm(request.POST)
         if form.is_valid():
@@ -63,9 +64,16 @@ def news_detail(request, pk):
             return redirect('news_detail', pk=pk)
     else:
         form = CommentsForm()
+    session_key = f'viewed_news_{news.pk}'
+    if not request.session.get(session_key, False):
+        News.objects.filter(id=news.pk).update(views=F('views') + 1)
+        news.refresh_from_db()
+        request.session[session_key] = True
+        request.session.set_expiry(600)
     return render(request, 'news_detail.html', {
         'news': news,
         'form': form,
+        'comments': comments
     })
 
 @login_required(login_url='/login/')
