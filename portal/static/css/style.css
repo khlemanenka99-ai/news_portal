@@ -26,4 +26,10 @@ main {
     display: block;       /* Удаляет возможные пробелы снизу, делает изображение блочным элементом */
     margin-bottom: 10px;  /* Немного отступа снизу, при желании */
 }
-
+.card {
+        border-radius: 8px;
+    }
+.badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }

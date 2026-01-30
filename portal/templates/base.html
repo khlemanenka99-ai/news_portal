@@ -21,35 +21,6 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="{% url 'addNews' %}">Предложить новость</a></li>
-                <!-- Курсы валют -->
-<!--                <li class="nav-item">-->
-<!--                    <span class="nav-link">-->
-<!--                        USD-{{ rate_usd|default:"Данные недоступны" }};-->
-<!--                        EUR-{{ rate_eur|default:"Данные недоступны" }};-->
-<!--                        RUB-{{ rate_rub|default:"Данные недоступны" }}-->
-<!--                    </span>-->
-<!--                </li>-->
-<!--                &lt;!&ndash; Погода &ndash;&gt;-->
-<!--                {% if weather_minsk %}-->
-<!--                <li class="nav-item">-->
-<!--                    <span class="nav-link">-->
-<!--                        Погода в Минске: {{ weather_minsk.temperature }}°C, ветер {{ weather_minsk.windspeed }} м/с,-->
-<!--                        {% if weather_minsk.weathercode == 0 %}-->
-<!--                        Ясно-->
-<!--                        {% elif weather_minsk.weathercode == 1 %}-->
-<!--                        Пасмурно-->
-<!--                        {% elif weather_minsk.weathercode == 2 %}-->
-<!--                        Облачно-->
-<!--                        {% else %}-->
-<!--                        Неизвестно-->
-<!--                        {% endif %}-->
-<!--                    </span>-->
-<!--                </li>-->
-<!--                {% else %}-->
-<!--                <li class="nav-item">-->
-<!--                    <span class="nav-link">Данные о погоде недоступны</span>-->
-<!--                </li>-->
-                {% endif %}
                 <!-- Аутентификация -->
                 {% if user.is_authenticated %}
                 <li class="nav-item">

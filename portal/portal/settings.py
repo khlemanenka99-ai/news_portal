@@ -42,8 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'register',
     'newsapp',
-    'drf_yasg',
+    'weatherapp',
+    'tgbot',
 ]
 
 MIDDLEWARE = [
@@ -141,28 +143,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
-
-from datetime import timedelta
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': (
-#         'rest_framework_simplejwt.authentication.JWTAuthentication',
-#         # можно оставить SessionAuthentication для веб-страниц, если нужно:
-#         # 'rest_framework.authentication.SessionAuthentication',
-#     ),
-#     'DEFAULT_PERMISSION_CLASSES': (
-#         'rest_framework.permissions.IsAuthenticated',  # по умолчанию защищаем все API
-#     )
-# }
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=365),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,   # если True — при refresh выдается новый refresh
-    'BLACKLIST_AFTER_ROTATION': True, # требует token_blacklist app
-    'ALGORITHM': 'HS256',
-    # опционально укажи SECRET_KEY, по умолчанию используется Django SECRET_KEY
-}
 
 
 CACHES = {

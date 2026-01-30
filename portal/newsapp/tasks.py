@@ -14,10 +14,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import News, Category
 
-# celery -A portal worker --loglevel=info команда для запуска воркера
-# celery -A portal beat --loglevel=info команда для запуска расписания для воркера
-# celery -A newsapp.tasks call dollar_to_byn для вызова одной задачи
-
 logger = logging.getLogger('api')
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=10)
@@ -49,40 +45,14 @@ def to_byn(self):
 
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=10)
-def fetch_weather(self):
-    logger.info("Запуск задачи погоды")
-    latitude = 53.9006
-    longitude = 27.5590
-    try:
-        url = (
-            "https://api.open-meteo.com/v1/forecast"
-            "?latitude={}&longitude={}&current_weather=true"
-        ).format(latitude, longitude)
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()  # Проверка статуса ответа
-        data = response.json()
-
-        weather = data.get('current_weather')
-        if weather is None:
-            raise ValueError("Данные о текущей погоде не найдены")
-
-        cache.set('current_weather_minsk', weather, timeout=3600)
-        logger.info(f"Погода успешно обновлена: {weather}")
-
-    except Exception as e:
-        logger.error(f"Ошибка: {e}")
-        raise self.retry(exc=e)
-
-
-@shared_task(bind=True, max_retries=5, default_retry_delay=10)
 def news_pars(self):
     logger.info("Запуск задачи парсинга новостей")
     sources = [
-        ("https://people.onliner.by/", 3),
-        ("https://auto.onliner.by/", 4),
-        ("https://tech.onliner.by/", 5),
-        ("https://realt.onliner.by/", 6),
-        ("https://money.onliner.by/", 7)
+        ("https://people.onliner.by/", 1),
+        ("https://auto.onliner.by/", 2),
+        ("https://tech.onliner.by/", 3),
+        ("https://realt.onliner.by/", 4),
+        ("https://money.onliner.by/", 5)
     ]
     driver = None
     for url, category_id in sources:
@@ -94,11 +64,10 @@ def news_pars(self):
             time.sleep(3)
             wait = WebDriverWait(driver, 10)
 
-            news_block = wait.until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, ".news-tidings__link"))
-            )
-            title_link = news_block.find_element(By.CSS_SELECTOR, "a.news-tidings__stub, a.news-tiles__stub")
+
+            title_link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "a.news-tidings__link")))
             # Скроллим в видимую часть через JS
+
             driver.execute_script("arguments[0].scrollIntoView(true);", title_link)
             time.sleep(2)
             # Кликаем через JS
