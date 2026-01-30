@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Погода в городах Беларуси{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">
+            <i class="bi bi-cloud-sun"></i> Погода в городах Беларуси
+        </h1>
+        <p class="lead text-muted">Актуальная информация о погоде в реальном времени</p>
+    </div>
+
+    <!-- Форма выбора города -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-10">
+                    <div class="input-group">
+                        <span class="input-group-text bg-primary text-white">
+                            <i class="bi bi-geo-alt"></i>
+                        </span>
+                        <select name="city_id"
+                                class="form-select form-select-lg"
+                                aria-label="Выберите город">
+                            <option value="">-- Все города --</option>
+                            {% for city in all_cities %}
+                            <option value="{{ city.id }}"
+                                    {% if request.GET.city_id and request.GET.city_id == city.id|stringformat:"s" %}selected{% endif %}>
+                                {{ city.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="bi bi-check-lg"></i> Выбрать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Уведомление о примененном фильтре -->
+    {% if request.GET.city_id %}
+    <div class="mb-4">
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-funnel-fill"></i>
+                Фильтр по городу:
+                <strong>
+                    {% for city in all_cities %}
+                        {% if request.GET.city_id == city.id|stringformat:"s" %}
+                            {{ city.name }}
+                        {% endif %}
+                    {% endfor %}
+                </strong>
+            </div>
+            <a href="?" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-x-circle"></i> Показать все города
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Карточки городов -->
+    {% if display_cities %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for city in display_cities %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-geo-alt-fill"></i> {{ city.name }}
+                        </h5>
+                        <span class="badge bg-light text-primary">
+                            ID: {{ city.id }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    {% comment %} Упрощенный вариант без custom_filters {% endcomment %}
+                    {% for weather in weather_data %}
+                    {% if weather.city_id == city.id %}
+                    <div class="text-center mb-3">
+                        <div class="display-3 fw-bold text-warning">
+                            {{ weather.temperature|default:"-" }}°C
+                        </div>
+                        <div class="h5 text-muted">
+                            {{ weather.weathercode.description|default:"Нет данных" }}
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-clock"></i>
+                            {% if weather.date_updated %}
+                            {{ weather.date_updated|date:"d.m.Y H:i" }}
+                            {% else %}
+                            Нет данных о времени
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="border rounded p-2 text-center bg-light">
+                                    <div class="text-muted small">
+                                        <i class="bi bi-wind"></i> Ветер
+                                    </div>
+                                    <div class="fw-bold">
+                                        {{ weather.windspeed|default:"-" }} км/ч
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-2 text-center bg-light">
+                                    <div class="text-muted small">
+                                        <i class="bi bi-compass"></i> Направление
+                                    </div>
+                                    <div class="fw-bold">
+                                        {{ weather.winddirection|default:"-" }}°
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <div class="text-muted mb-2">
+                            <i class="bi bi-cloud-slash display-4"></i>
+                        </div>
+                        <h5 class="text-secondary">Нет данных о погоде</h5>
+                        <p class="text-muted small">
+                            Данные пока не получены
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Сообщение если города не найдены -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-search display-1 text-muted"></i>
+        </div>
+        <h3 class="text-secondary mb-3">Нет городов для отображения</h3>
+        <p class="text-muted mb-4">
+            Попробуйте выбрать другой город или сбросить фильтр
+        </p>
+        <a href="?" class="btn btn-primary">
+            <i class="bi bi-house"></i> Показать все города
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Информационная панель -->
+    <div class="row mt-5">
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-thermometer-half display-4 text-primary mb-3"></i>
+                    <h5>Температура</h5>
+                    <p class="text-muted">Текущая температура в градусах Цельсия</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-wind display-4 text-success mb-3"></i>
+                    <h5>Скорость ветра</h5>
+                    <p class="text-muted">Измеряется в километрах в час</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-compass display-4 text-warning mb-3"></i>
+                    <h5>Направление ветра</h5>
+                    <p class="text-muted">Указывается в градусах от 0 до 360</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
