@@ -1,0 +1,17 @@
+name: Simple Test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  simple-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Hello World
+        run: echo "GitHub Actions is working!"
+
+      - name: List files
+        run: ls -la
