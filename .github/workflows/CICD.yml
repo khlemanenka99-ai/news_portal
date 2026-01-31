@@ -68,4 +68,5 @@ jobs:
 
     - name: Run all Django tests
       run: |
+        cd portal 
         python manage.py test 
