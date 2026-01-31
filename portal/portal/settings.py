@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'register',
     'newsapp',
     'weatherapp',
-    'tgbot',
 ]
 
 MIDDLEWARE = [
@@ -134,7 +133,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -198,6 +197,12 @@ LOGGING = {
             "formatter": "simple",
         },
 
+        "bot_file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "bot.log"),
+            "formatter": "simple",
+        },
+
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "simple",
@@ -228,6 +233,12 @@ LOGGING = {
 
         "api": {
             "handlers": ["app_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+
+        "bot": {
+            "handlers": ["bot_file"],
             "level": "INFO",
             "propagate": False,
         },

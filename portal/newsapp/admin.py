@@ -5,7 +5,7 @@ from .models import News, Category, Comments
 
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
-    list_display = ('title', 'is_approved', 'category', 'author', 'date_updated', 'views')
+    list_display = ('title', 'is_approved', 'category', 'author', 'date_updated', 'views', 'image_url')
     list_filter = ('is_approved',)
     actions = ['approve_selected']
 

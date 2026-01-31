@@ -10,6 +10,13 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class TG_Author(models.Model):
+    objects = models.Manager()
+
+    telegram_user_id = models.BigIntegerField(null=True, blank=True)
+    telegram_username = models.CharField(max_length=100, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+
 class News(models.Model):
     objects = models.Manager()
 
@@ -27,6 +34,12 @@ class News(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     views = models.PositiveIntegerField(default=0)
+    telegram_author = models.ForeignKey(
+        TG_Author,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return self.title

@@ -28,19 +28,8 @@ class Weather(models.Model):
         null=True,
         blank=True
     )
-    temperature = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        default=0.00
-    )
-    windspeed = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
+    temperature = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00)
+    windspeed = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     winddirection = models.IntegerField(null=True, blank=True)
     date_updated = models.DateTimeField(auto_now=True)
     weathercode = models.ForeignKey(

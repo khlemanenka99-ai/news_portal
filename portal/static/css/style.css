@@ -12,19 +12,20 @@ main {
     flex: 1;
 }
 
-/* Если у вас есть обертка для изображений, например, <div class="image-wrapper"> */
+
 .image-wrapper img {
-    display: inline-block; /* позволяет изображению располагаться в строку, если у вас несколько изображений */
+    display: inline-block;
 }
 
-/* Стиль для изображений новости */
+
 .news-image {
-    max-width: 1000px;     /* Максимальная ширина изображения */
-    width: 100%;          /* Расширяется по ширине контейнера, если он меньше 300px */
-    height: auto;         /* Сохраняет пропорции изображения */
-    object-fit: cover;    /* Обрезает изображение по необходимости */
-    display: block;       /* Удаляет возможные пробелы снизу, делает изображение блочным элементом */
-    margin-bottom: 10px;  /* Немного отступа снизу, при желании */
+    max-width: 1000px;
+    max-height: 1000px;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 10px;
 }
 .card {
         border-radius: 8px;
