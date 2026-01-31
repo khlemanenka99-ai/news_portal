@@ -29,7 +29,7 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       SECRET_KEY: test-secret-key-for-github-actions-${{ github.run_id }}
-      DEBUG: False
+      DEBUG: True
 
     steps:
     - name: Checkout code
