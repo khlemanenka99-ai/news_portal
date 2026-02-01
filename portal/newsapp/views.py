@@ -24,7 +24,7 @@ def news_view(request):
     rate_usd = cache.get('dollar_to_byn_rate')
     rate_eur = cache.get('euro_to_byn_rate')
     rate_rub = cache.get('ruble_to_byn_rate')
-    news_n = news.order_by('-date_updated')
+    news_n = news.order_by('-date_created')
     t = Weather.objects.exclude(temperature__isnull=True).aggregate(
         t_avg=Avg('temperature'),
     )

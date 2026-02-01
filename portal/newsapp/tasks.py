@@ -105,7 +105,7 @@ def news_pars(self):
             try:
                 paragraphs = driver.find_elements(By.TAG_NAME, "p")
                 content_texts = [p.text.strip() for p in paragraphs if p.text.strip()]
-                content_text = " ".join(content_texts)
+                content_text = "\n\n".join(content_texts)
                 logger.info(f"Найдено {len(content_texts)} абзацев текста")
             except Exception as e:
                 logger.error(f"Ошибка при поиске контента: {e}")
@@ -114,15 +114,19 @@ def news_pars(self):
             # Сохранение в базу данных
             try:
                 category_obj = Category.objects.get(id=category_id)
-                existing_news, created = News.objects.update_or_create(
+                existing_news = News.objects.filter(
                     title=title_text,
-                    defaults={
-                        'image_url': image_url,
-                        'content': content_text,
-                        'category': category_obj,
-                        'is_approved': True,
-                        'date_updated': timezone.now()
-                    }
+                    category=category_obj
+                ).first()
+                if existing_news:
+                    continue
+                created = News.objects.create(
+                    title=title_text,
+                    image_url=image_url,
+                    content=content_text,
+                    category=category_obj,
+                    is_approved=True,
+                    date_updated=timezone.now()
                 )
             except Exception as e:
                 logger.error(f"Ошибка при сохранении новости в БД: {e}", exc_info=True)

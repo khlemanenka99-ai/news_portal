@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from .models import City, Weather, Weather_codes
 
-logger = logging.getLogger('api')
+logger = logging.getLogger('weather')
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=10)
 def fetch_weather(self):

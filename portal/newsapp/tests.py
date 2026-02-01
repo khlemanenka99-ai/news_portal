@@ -1,12 +1,10 @@
-import datetime
-
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase, Client, RequestFactory
 from django.urls import reverse
+import datetime
 from .forms import NewsForm
-from .models import News, Category
-
+from .models import News, Category, Comments
 
 
 class AddNewsViewTest(TestCase):
@@ -100,9 +98,6 @@ class AddNewsViewTest(TestCase):
 class NewsViewTest(TestCase):
     def setUp(self):
         """Настройка тестовых данных"""
-        # Очищаем кэш
-        cache.clear()
-
         # Создаем тестовые категории
         self.category1 = Category.objects.create(name="Политика")
         self.category2 = Category.objects.create(name="Спорт")
@@ -153,11 +148,6 @@ class NewsViewTest(TestCase):
             category=self.category1,
             is_approved=False
         )
-        # Устанавливаем кэш курсов валют
-        cache.set('dollar_to_byn_rate', 3.25, timeout=300)
-        cache.set('euro_to_byn_rate', 3.55, timeout=300)
-        cache.set('ruble_to_byn_rate', 0.035, timeout=300)
-
         # URL для тестирования
         self.url = reverse('news')
 
@@ -303,6 +293,16 @@ class NewsViewTest(TestCase):
         self.assertEqual(news_in_context.count(), 1)
         self.assertEqual(news_in_context[0].title, 'Еще одна политическая новость')
 
+class CurrenciesViewTest(TestCase):
+    def setUp(self):
+        # Очищаем кэш
+        cache.clear()
+        # Устанавливаем кэш курсов валют
+        cache.set('dollar_to_byn_rate', 3.25, timeout=300)
+        cache.set('euro_to_byn_rate', 3.55, timeout=300)
+        cache.set('ruble_to_byn_rate', 0.035, timeout=300)
+        self.url = reverse('news')
+
     def test_news_view_currency_rates_in_context(self):
         """Проверка курсов валют в контексте"""
         response = self.client.get(self.url)
@@ -323,3 +323,161 @@ class NewsViewTest(TestCase):
         self.assertIsNone(response.context['rate_usd'])
         self.assertIsNone(response.context['rate_eur'])
         self.assertIsNone(response.context['rate_rub'])
+
+
+class NewsDetailUnitTests(TestCase):
+
+    def setUp(self):
+        # Минимальная настройка
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.category = Category.objects.create(name="Технологии")
+        self.news = News.objects.create(
+            title='Тестовая новость',
+            content='Содержание',
+            author='author',
+            category=self.category,
+            is_approved=True,
+            views=0
+        )
+        self.url = reverse('news_detail', kwargs={'pk': self.news.pk})
+        self.client = Client()
+
+
+    def test_view_returns_200_for_existing_news(self):
+        """GET запрос возвращает 200 для существующей новости"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_returns_404_for_nonexistent_news(self):
+        """GET запрос возвращает 404 для несуществующей новости"""
+        response = self.client.get(reverse('news_detail', kwargs={'pk': 9999}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_view_increments_views_counter(self):
+        """Счетчик просмотров увеличивается при первом просмотре"""
+        initial_views = self.news.views
+        self.client.get(self.url)
+        self.news.refresh_from_db()
+        self.assertEqual(self.news.views, initial_views + 1)
+
+    def test_view_does_not_increment_views_on_repeated_views(self):
+        """Счетчик не увеличивается при повторном просмотре в той же сессии"""
+        self.client.get(self.url)  # Первый просмотр
+        self.news.refresh_from_db()
+        first_count = self.news.views
+
+        self.client.get(self.url)  # Второй просмотр (та же сессия)
+        self.news.refresh_from_db()
+        self.assertEqual(self.news.views, first_count)  # Не изменился
+
+    def test_view_returns_comments_in_context(self):
+        """Комментарии передаются в контексте"""
+        # Создаем тестовый комментарий
+        Comments.objects.create(
+            news=self.news,
+            author='commenter',
+            comments='Тестовый комментарий'
+        )
+
+        response = self.client.get(self.url)
+        self.assertIn('comments', response.context)
+        self.assertEqual(response.context['comments'].count(), 1)
+
+    def test_view_returns_form_in_context(self):
+        """Форма комментариев передается в контексте"""
+        response = self.client.get(self.url)
+        self.assertIn('form', response.context)
+        self.assertEqual(response.context['form'].__class__.__name__, 'CommentsForm')
+
+
+class NewsDetailViewIntegrationTest(TestCase):
+    """Интеграционные тесты полного сценария"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='integrationuser',
+            password='testpass123'
+        )
+        self.category = Category.objects.create(name="Интеграционная категория")
+        self.news = News.objects.create(
+            title='Интеграционная новость',
+            content='Тестовое содержание',
+            author='testauthor',
+            category=self.category,
+            is_approved=True,
+            views=0
+        )
+        self.client = Client()
+        self.url = reverse('news_detail', kwargs={'pk': self.news.pk})
+
+
+class AddNewsViewUnitTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.category = Category.objects.create(name="Технологии")
+        self.url = reverse('addNews')
+        self.valid_data = {
+            'title': 'Тестовая новость',
+            'content': 'Содержание',
+            'category': self.category.id,
+            'image_url': 'https://example.com/image.jpg',
+        }
+        self.client = Client()
+
+    # ===== ОСНОВНЫЕ UNIT-ТЕСТЫ =====
+
+    def test_requires_login(self):
+        """View требует авторизации"""
+        response = self.client.get(self.url)
+        self.assertRedirects(response, f'/login/?next={self.url}')
+
+    def test_get_request_returns_form(self):
+        """GET запрос возвращает форму"""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'addNews.html')
+        self.assertIsInstance(response.context['form'], NewsForm)
+        self.assertFalse(response.context['form'].is_bound)
+
+    def test_post_valid_data_creates_news(self):
+        """POST с валидными данными создает новость"""
+        self.client.login(username='testuser', password='testpass123')
+        initial_count = News.objects.count()
+
+        response = self.client.post(self.url, self.valid_data)
+
+        self.assertRedirects(response, reverse('news'))
+        self.assertEqual(News.objects.count(), initial_count + 1)
+
+        news = News.objects.latest('id')
+        self.assertEqual(news.title, 'Тестовая новость')
+        self.assertEqual(news.author, 'testuser')
+
+    def test_post_invalid_data_returns_errors(self):
+        """POST с невалидными данными возвращает ошибки"""
+        self.client.login(username='testuser', password='testpass123')
+
+        invalid_data = {'title': '', 'content': 'Текст'}  # Пустой заголовок
+
+        response = self.client.post(self.url, invalid_data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
+        self.assertIn('title', response.context['form'].errors)
+
+    def test_form_saves_with_author(self):
+        """Форма сохраняется с автором из request.user"""
+        self.client.login(username='testuser', password='testpass123')
+
+        response = self.client.post(self.url, self.valid_data)
+        news = News.objects.latest('id')
+
+        self.assertEqual(news.author, 'testuser')

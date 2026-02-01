@@ -203,6 +203,12 @@ LOGGING = {
             "formatter": "simple",
         },
 
+        "weather_file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "weather.log"),
+            "formatter": "simple",
+        },
+
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "simple",
@@ -239,6 +245,12 @@ LOGGING = {
 
         "bot": {
             "handlers": ["bot_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+
+        "weather": {
+            "handlers": ["weather_file"],
             "level": "INFO",
             "propagate": False,
         },

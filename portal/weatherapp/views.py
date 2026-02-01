@@ -1,7 +1,9 @@
 from django.shortcuts import render
+from django.views.decorators.cache import cache_page
+
 from .models import City, Weather
 
-
+@cache_page(900)
 def weather_view(request):
     all_cities = City.objects.all().order_by('name')
     city_id = request.GET.get('city_id')
