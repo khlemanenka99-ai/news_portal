@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from .models import News, Category
 
-logger = logging.getLogger('api')
+logger = logging.getLogger('app')
 
 @shared_task(bind=True, max_retries=5, default_retry_delay=10)
 def to_byn(self):
@@ -86,6 +86,17 @@ def news_pars(self):
                 logger.error(f"Ошибка при поиске заголовка: {e}")
                 raise
 
+            # Поиск автора
+            try:
+                authors = driver.find_element(By.CSS_SELECTOR, ".news-header__author-link")
+                if authors:
+                    author_text = authors.text.strip()
+                else:
+                    raise ValueError("Автор не найден")
+            except Exception as e:
+                logger.error(f"Ошибка при поиске Автора: {e}")
+                raise
+
             # Поиск изображения
             try:
                 div_element = driver.find_element(By.CLASS_NAME, 'news-header__image')
@@ -99,14 +110,20 @@ def news_pars(self):
                     image_url = ""
             except Exception as e:
                 logger.warning(f"Ошибка при поиске изображения: {e}")
-                image_url = ""
+                raise
 
             # Поиск контента
             try:
                 paragraphs = driver.find_elements(By.TAG_NAME, "p")
-                content_texts = [p.text.strip() for p in paragraphs if p.text.strip()]
+                content_texts = []
+                for p in paragraphs:
+                    text = p.get_attribute('innerText') or p.text
+                    if text.strip():
+                        content_texts.append(text.strip())
+
                 content_text = "\n\n".join(content_texts)
                 logger.info(f"Найдено {len(content_texts)} абзацев текста")
+                logger.info(content_text)
             except Exception as e:
                 logger.error(f"Ошибка при поиске контента: {e}")
                 raise
@@ -122,11 +139,11 @@ def news_pars(self):
                     continue
                 created = News.objects.create(
                     title=title_text,
+                    author=author_text,
                     image_url=image_url,
                     content=content_text,
                     category=category_obj,
-                    is_approved=True,
-                    date_updated=timezone.now()
+                    moderation_status='approved',
                 )
             except Exception as e:
                 logger.error(f"Ошибка при сохранении новости в БД: {e}", exc_info=True)

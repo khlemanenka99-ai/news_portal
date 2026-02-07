@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'register',
     'newsapp',
     'weatherapp',
+    'rest_framework',
+    'botapi'
 ]
 
 MIDDLEWARE = [
@@ -197,6 +199,12 @@ LOGGING = {
             "formatter": "simple",
         },
 
+        "api_file": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "api.log"),
+            "formatter": "simple",
+        },
+
         "bot_file": {
             "class": "logging.FileHandler",
             "filename": os.path.join(LOG_DIR, "bot.log"),
@@ -237,7 +245,7 @@ LOGGING = {
             "propagate": False,
         },
 
-        "api": {
+        "app": {
             "handlers": ["app_file"],
             "level": "INFO",
             "propagate": False,
@@ -254,5 +262,12 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+
+        "api": {
+            "handlers": ["api_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+
     },
 }

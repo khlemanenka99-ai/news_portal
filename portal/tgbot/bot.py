@@ -2,7 +2,6 @@ import os
 import sys
 import logging
 import uuid
-
 from django.conf import settings
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,12 +16,18 @@ from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQu
     ContextTypes, filters
 
 from portal.tgbot.config import WAITING_FOR_TITLE, WAITING_FOR_CONTENT, WAITING_FOR_PHOTO, WAITING_FOR_CONFIRMATION, \
-    TELEGRAM_BOT_TOKEN
+    TELEGRAM_BOT_TOKEN, WAITING_FOR_CATEGORY
 from portal.tgbot.db import Database
 
 logger = logging.getLogger('bot')
 
-
+CATEGORY_NAMES = {
+    1: 'Люди',
+    2: 'Авто',
+    3: 'Технологии',
+    4: 'Недвижимость',
+    5: 'Экономика'
+}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -30,7 +35,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✨ Я бот для отправки новостей.\n\n"
         "📝 Отправь команду /new чтобы предложить новость."
     )
-
 
 async def new_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
@@ -51,25 +55,46 @@ async def get_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_content(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['content'] = update.message.text
+
+    # callback_data должен быть строкой, а не числом!
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Люди", callback_data="1")],  # Строка "1", а не число 1
+        [InlineKeyboardButton("Авто", callback_data="2")],
+        [InlineKeyboardButton("Технологии", callback_data="3")],
+        [InlineKeyboardButton("Недвижимость", callback_data="4")],
+        [InlineKeyboardButton("Экономика", callback_data="5")],
+    ])
+
     await update.message.reply_text(
         "✅ **Содержание сохранено!**\n\n"
-        "📷 Пришли фото к новости"
+        "📂 *Выберите категорию для поста:*\n"
+        "Нажмите на кнопку ниже:",
+        reply_markup=keyboard,
+        parse_mode='Markdown'
     )
-    return WAITING_FOR_PHOTO
+
+    return WAITING_FOR_CATEGORY
 
 
-async def add_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начинаем загрузку фото"""
+async def handle_category_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обрабатывает нажатие на inline-кнопку категории"""
     query = update.callback_query
     await query.answer()
+
+    category_id = int(query.data)  # Преобразуем строку в число
+    category_name = CATEGORY_NAMES[category_id]
+
+    context.user_data['category'] = category_id
     await query.edit_message_text(
-        "⬆️ Отправь фото в этот чат:"
+        f"✅ *Категория выбрана:* {category_name}\n"
+        "📷 *Отправьте фото:*\n"
+        "Прикрепите изображение к сообщению",
+        parse_mode='Markdown'
     )
     return WAITING_FOR_PHOTO
 
 
 async def get_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Получение фото"""
     media_dir = os.path.join(settings.MEDIA_ROOT, 'news_photos')
     os.makedirs(media_dir, exist_ok=True)
 
@@ -96,6 +121,7 @@ async def get_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"✅ **Фото получено!**\n\n"
         f"👀 **Предпросмотр новости:**\n\n"
         f"📌 **Заголовок:** {context.user_data['title']}\n"
+        f"📄 **Категория:** {CATEGORY_NAMES[context.user_data['category']]}\n"
         f"📄 **Содержание:** {context.user_data['content'][:100]}...\n"
         f"📷 **Фото:** добавлено ✅\n\n"
         f"📤 **Отправить новость на модерацию?**",
@@ -114,14 +140,14 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_data = {
             'id': user.id,
             'username': user.username,
-            'first_name': user.first_name,
-            'last_name': user.last_name
         }
+
+        category = context.user_data.get('category', {})
 
         news_data = {
             'title': context.user_data.get('title'),
             'content': context.user_data.get('content'),
-            'category': None,
+            'category': context.user_data.get('category'),
             'image_url': context.user_data.get('photo_url'),
         }
 
@@ -132,7 +158,6 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"🎉 **Успешно!**\n\n"
                 f"✅ Новость **#{news_id}** отправлена на модерацию!\n"
                 f"⏳ Мы проверим её в ближайшее время.\n\n"
-                f"📊 Статус можно будет отслеживать в личном кабинете.\n\n"
                 f"📝 Хочешь добавить ещё новость? Отправь /new"
             )
         else:
@@ -170,13 +195,21 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('new', new_news)],
         states={
-            WAITING_FOR_TITLE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_title)],
-            WAITING_FOR_CONTENT: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_content)],
+            WAITING_FOR_TITLE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, get_title)
+            ],
+            WAITING_FOR_CONTENT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, get_content)
+            ],
+            WAITING_FOR_CATEGORY: [
+                CallbackQueryHandler(handle_category_button)
+            ],
             WAITING_FOR_PHOTO: [
-                CallbackQueryHandler(add_photo, pattern='^add_photo$'),
                 MessageHandler(filters.PHOTO, get_photo),
             ],
-            WAITING_FOR_CONFIRMATION: [CallbackQueryHandler(confirm, pattern='^(send|cancel)$')],
+            WAITING_FOR_CONFIRMATION: [
+                CallbackQueryHandler(confirm, pattern='^(send|cancel)$')
+            ],
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )

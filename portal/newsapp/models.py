@@ -15,7 +15,6 @@ class TG_Author(models.Model):
 
     telegram_user_id = models.BigIntegerField(null=True, blank=True)
     telegram_username = models.CharField(max_length=100, null=True, blank=True)
-    date_created = models.DateTimeField(auto_now_add=True)
 
 class News(models.Model):
     objects = models.Manager()
@@ -28,11 +27,9 @@ class News(models.Model):
         null=True,
         blank=True
     )
-    image_url = models.URLField(blank=True, null=True)
-    is_approved = models.BooleanField(default=False)
+    image_url = models.CharField(blank=True, null=True)
     author = models.CharField(max_length=50, blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
     views = models.PositiveIntegerField(default=0)
     telegram_author = models.ForeignKey(
         TG_Author,
@@ -40,6 +37,35 @@ class News(models.Model):
         null=True,
         blank=True,
     )
+
+    moderation_status = models.CharField(
+        choices=[
+            ('pending', 'На модерации'),
+            ('approved', 'Одобрено'),
+            ('rejected', 'Отклонено')
+        ],
+        default='pending'
+    )
+    moderated_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    moderation_date = models.DateTimeField(null=True, blank=True)
+
+    def approve(self, moderator):
+        self.moderation_status = 'approved'
+        self.moderated_by = moderator
+        self.moderation_date = timezone.now()
+        self.save()
+
+    def reject(self, moderator):
+        self.moderation_status = 'rejected'
+        self.moderated_by = moderator
+        self.moderation_date = timezone.now()
+        self.save()
+
 
     def __str__(self):
         return self.title

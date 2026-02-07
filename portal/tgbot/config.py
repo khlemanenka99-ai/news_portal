@@ -8,11 +8,10 @@ env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 TELEGRAM_BOT_TOKEN = os.environ.get('tg_token')
-
 ADMIN_CHAT_ID = os.environ.get('admin_id')
 
 # Настройки
-BOT_USERNAME = 'MyNewsPortal_bot'  # Имя бота без @
+BOT_USERNAME = 'MyNewsPortal_bot'
 
 # Состояния для FSM (Finite State Machine)
 (

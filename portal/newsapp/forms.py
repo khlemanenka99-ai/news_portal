@@ -16,7 +16,7 @@ class NewsForm(forms.ModelForm):
         label='Выберите категорию',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    image_url = forms.URLField(
+    image_url = forms.CharField(
         label='URL картинки',
         required=False,
         widget=forms.URLInput(attrs={'class': 'form-control'})

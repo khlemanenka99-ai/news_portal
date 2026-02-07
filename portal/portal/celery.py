@@ -21,6 +21,6 @@ app.conf.beat_schedule = {
     },
     'weather-every-hour': {
         'task': 'weatherapp.tasks.fetch_weather',
-        'schedule': 300
+        'schedule': 3600
     }
 }
