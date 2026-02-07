@@ -10,12 +10,17 @@
         <h2>{{ news.title }}</h2>
         {% if news.image_url %}
         <img src="{{ news.image_url }}" alt="{{ news.title }}" class="news-image mx-auto d-block"
-             style="max-width: 100%; height: auto;">
+             style="max-width: 100%; height: auto; border-radius: 12px">
         {% else %}
         <img src="{% static 'no-image.png' %}" class="img-fluid rounded shadow-sm mx-auto d-block" alt="Нет фото"
              style="max-width: 100%; height: auto;">
         {% endif %}
-        <p class="card-text">{{ news.content }}</p>
+        <style>
+.preserve-linebreaks {
+    white-space: pre-line;
+}
+</style>
+        <p class="card-text preserve-linebreaks">{{ news.content }}</p>
 <h2 class="mt-4 mb-4">Комментарии:</h2>
 
 {% if comments %}

@@ -30,6 +30,11 @@ main {
 .card {
         border-radius: 8px;
     }
+
+.preserve-linebreaks {
+    white-space: pre-line;
+    }
+
 .badge {
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
