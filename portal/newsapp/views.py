@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from django.views.decorators.cache import cache_page
 from .forms import NewsForm, CommentsForm
 from .models import Category, Comments
 from .services import NewsService
 
-
+cache_page(60)
 def news_view(request):
     category_id = request.GET.get('category')
     query = request.GET.get('q', '').strip()
@@ -27,7 +28,7 @@ def news_view(request):
         't_avg': t['t_avg']
     })
 
-
+cache_page(60)
 def news_detail(request, pk):
     news = NewsService.get_news_by_id(pk)
     comments = Comments.objects.filter(news=news).order_by('-date_created')

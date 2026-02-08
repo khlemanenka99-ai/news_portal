@@ -5,6 +5,20 @@
 {% block title %}{{ news.title }}{% endblock %}
 
 {% block content %}
+<style>
+    .preserve-linebreaks {
+        white-space: pre-line;
+           }
+    .news-image {
+        max-width: 500px;
+        max-height: 500px;
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        display: block;
+        margin-bottom: 10px;
+           }
+</style>
 <div class="row">
     <div class="col-md-7">
         <h2>{{ news.title }}</h2>
@@ -15,11 +29,7 @@
         <img src="{% static 'no-image.png' %}" class="img-fluid rounded shadow-sm mx-auto d-block" alt="Нет фото"
              style="max-width: 100%; height: auto;">
         {% endif %}
-        <style>
-.preserve-linebreaks {
-    white-space: pre-line;
-}
-</style>
+
         <p class="card-text preserve-linebreaks">{{ news.content }}</p>
 <h2 class="mt-4 mb-4">Комментарии:</h2>
 

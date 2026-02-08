@@ -2,6 +2,8 @@ import os
 import sys
 import logging
 import uuid
+
+import aiohttp
 from django.conf import settings
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +30,22 @@ CATEGORY_NAMES = {
     4: 'Недвижимость',
     5: 'Экономика'
 }
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    help_text = """
+    📋 *Доступные команды:*
+
+    /start - Начало работы с ботом
+    /help - Показать это сообщение
+    /new - Предложить новость
+    /status <ID> - Проверить статус новости
+
+    ❓ *Нужна помощь?*
+    Если возникли проблемы, свяжитесь с администратором.
+        """
+
+    await update.message.reply_text(help_text, parse_mode='Markdown')
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -159,6 +177,7 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"✅ Новость **#{news_id}** отправлена на модерацию!\n"
                 f"⏳ Мы проверим её в ближайшее время.\n\n"
                 f"📝 Хочешь добавить ещё новость? Отправь /new"
+                f"🏷️ Что бы узнать статус новости отправь /status {news_id}"
             )
         else:
             await query.edit_message_text(
@@ -175,6 +194,36 @@ async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     context.user_data.clear()
     return ConversationHandler.END
+
+
+async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("📝 Укажите ID новости: /status 123")
+        return
+    news_id = context.args[0]
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f'http://127.0.0.1:8000/botapi/check/{news_id}/'
+            async with session.get(url) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data['status'] == 'approved':
+                        m_status = 'Опубликовано ✅'
+                    elif data['status'] == 'rejected':
+                        m_status = 'Отклонена ❌'
+                    elif data['status'] == 'pending':
+                        m_status = 'На модерации ⏳'
+                    await update.message.reply_text(
+                        f"📰 Новость #{news_id}\n"
+                        f"📌 {data['title']}\n"
+                        f"🏷️ Статус: {m_status}"
+                    )
+                else:
+                    await update.message.reply_text("❌ Новость не найдена")
+    except:
+        await update.message.reply_text("❌ Ошибка запроса")
+
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -215,6 +264,8 @@ def main():
     )
 
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("status", status_command))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(conv_handler)
     app.add_error_handler(error)
 

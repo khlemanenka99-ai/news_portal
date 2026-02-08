@@ -3,14 +3,14 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from botapi.serializers import NewsSerializer
-from newsapp.models import TG_Author
+from newsapp.models import TG_Author, News
 
 logger = logging.getLogger('api')
+
 class NewsCreateAPIView(APIView):
 
     def post(self, request):
-        logger.info(f"=== ПОЛУЧЕН ЗАПРОС ОТ БОТА ===")
-        logger.info(f"Все данные: {request.data}")
+        logger.info(f"=== ПОЛУЧЕН POST ЗАПРОС ОТ БОТА ===")
         try:
             data = request.data.copy()
             telegram_user_id = data.get('telegram_user_id')
@@ -35,3 +35,18 @@ class NewsCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         logger.info(f"новость не прошла проверку сериалайзера {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class NewsCheckAPIView(APIView):
+
+    def get(self, request, news_id=None):
+        logger.info(f"=== ПОЛУЧЕН GET ЗАПРОС ОТ БОТА ===")
+        try:
+            news = News.objects.get(pk=news_id)
+        except News.DoesNotExist:
+            return Response({'error': 'News not found'}, status=404)
+        return Response({
+            'id': news.id,
+            'title': news.title,
+            'status': news.moderation_status,
+        })
+

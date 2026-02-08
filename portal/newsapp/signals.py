@@ -1,16 +1,26 @@
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.core.cache import cache
-from .models import News
-
-
-# @receiver(post_save, sender=News)
-# def clear_cache_on_news_add(sender, instance, created, **kwargs):
-#     if created:
-#         cache.clear()  # Очищает весь кеш
-#         # Или, например, очистка конкретных ключей:
-#         # cache.delete('конкретный ключ')
+# import asyncio
+# import logging
 #
-#         print("Кеш очищен после добавления нового файла.")
+# from asgiref.sync import sync_to_async
+# from django.db.models.signals import post_save, pre_save
+# from django.dispatch import receiver
+# from django.conf import settings
+# from .models import News
+# from telegram import Bot
+# from telegram.error import TelegramError
+#
+# logger = logging.getLogger('app')
+#
+# @receiver(pre_save, sender=News)
+# def track_status(sender, instance, **kwargs):
+#     try:
+#         old_news = News.objects.get(pk=instance.pk)
+#         old_status = old_news.moderation_status
+#         new_status = instance.moderation_status
+#         if old_status != new_status:
+#             logger.info(f"✅ YES! Статус изменился: {old_status} → {new_status}")
+#             return new_status
+#         handle_status_change_async(instance.pk, new_status)
+#     except Exception as e:
+#         logger.error(f"ошибка изменения статуса: {e}")
 
-# сообщение админу при предложении новости

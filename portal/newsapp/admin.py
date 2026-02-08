@@ -12,15 +12,30 @@ class NewsAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 
     def approve_selected(self, request, queryset):
-        queryset.update(moderation_status='approved')
-        queryset.update(moderated_by=request.user)
-        queryset.update(moderation_date=timezone.now())
+        for news in queryset:
+            news.moderation_status = 'approved'
+            news.moderated_by = request.user
+            news.moderation_date = timezone.now()
+            news.save()
+
+        self.message_user(
+            request,
+            f"Одобрено {queryset.count()} новостей. Пользователи уведомлены."
+        )
     approve_selected.short_description = "Одобрить выбранные новости"
 
     def rejected_selected(self, request, queryset):
-        queryset.update(moderation_status='rejected')
-        queryset.update(moderated_by=request.user)
-        queryset.update(moderation_date=timezone.now())
+        for news in queryset:
+            news.moderation_status = 'rejected'
+            news.moderated_by = request.user
+            news.moderation_date = timezone.now()
+            news.save()
+
+        self.message_user(
+            request,
+            f"Отклонено {queryset.count()} новостей. Пользователи уведомлены."
+        )
+
     rejected_selected.short_description = "Отклонить выбранные новости"
 
 
