@@ -8,6 +8,8 @@ from .models import News, Category, Comments, TG_Author
 class NewsAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'moderation_status', 'author' , 'telegram_author', 'date_created', 'views', 'image_url')
     actions = ['approve_selected', 'rejected_selected']
+    list_filter = ('moderation_status', 'category',)
+    search_fields = ('title',)
 
     def approve_selected(self, request, queryset):
         queryset.update(moderation_status='approved')

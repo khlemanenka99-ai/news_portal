@@ -1,12 +1,9 @@
 import re
-
 from celery import shared_task
 import logging
 import requests
 from django.core.cache import cache
 import time
-
-from django.utils import timezone
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -123,7 +120,6 @@ def news_pars(self):
 
                 content_text = "\n\n".join(content_texts)
                 logger.info(f"Найдено {len(content_texts)} абзацев текста")
-                logger.info(content_text)
             except Exception as e:
                 logger.error(f"Ошибка при поиске контента: {e}")
                 raise

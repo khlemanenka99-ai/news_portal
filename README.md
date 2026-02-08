@@ -34,5 +34,3 @@ News Portal - это веб-приложение на Django для агрега
     Cache: Redis
 
     Web Server: Gunicorn (production), Django dev server (development)
-
-бла бла бла
