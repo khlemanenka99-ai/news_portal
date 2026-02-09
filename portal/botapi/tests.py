@@ -1,4 +1,9 @@
 from django.test import TestCase
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from newsapp.models import News, TG_Author
+import json
 
 
 class NewsAPITestCase(TestCase):

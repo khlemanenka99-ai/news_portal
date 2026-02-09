@@ -56,7 +56,6 @@ class RegisterForm(forms.ModelForm):
     def clean_username(self):
         username = self.cleaned_data.get('username')
         # Проверка на уникальность имени пользователя
-        from django.contrib.auth.models import User
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError("Пользователь с таким именем уже существует.")
         return username
@@ -64,7 +63,6 @@ class RegisterForm(forms.ModelForm):
     def clean_email(self):
         email = self.cleaned_data.get('email')
         # Проверка на уникальность email
-        from django.contrib.auth.models import User
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Пользователь с таким email уже существует.")
         return email

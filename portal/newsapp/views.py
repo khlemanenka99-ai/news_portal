@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
 from django.shortcuts import render, redirect
 from django.views.decorators.cache import cache_page
 from .forms import NewsForm, CommentsForm
-from .models import Category, Comments
+from .models import Category, Comments, News
 from .services import NewsService
 
 cache_page(60)
@@ -19,7 +20,7 @@ def news_view(request):
     rate_usd, rate_eur, rate_rub = NewsService.currency()
     t = NewsService.avg_temperature()
     return render(request, 'news.html', {
-        'page_obj': page_obj,
+        'news': page_obj,
         'categories': Category.objects.all(),
         'selected_category': request.GET.get('category'),
         'rate_usd': rate_usd,
@@ -30,7 +31,10 @@ def news_view(request):
 
 cache_page(60)
 def news_detail(request, pk):
-    news = NewsService.get_news_by_id(pk)
+    try:
+        news = NewsService.get_news_by_id(pk)
+    except News.DoesNotExist:
+        raise Http404("Новость не найдена")
     comments = Comments.objects.filter(news=news).order_by('-date_created')
     if request.method == 'POST':
         form = CommentsForm(request.POST)
@@ -51,7 +55,7 @@ def news_detail(request, pk):
         'comments': comments
     })
 
-@login_required(login_url='/login/')
+@login_required(login_url='/register/login/')
 def add_news_view(request):
     if request.method == 'POST':
         form = NewsForm(request.POST)
