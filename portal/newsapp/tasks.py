@@ -83,17 +83,6 @@ def news_pars(self):
                 logger.error(f"Ошибка при поиске заголовка: {e}")
                 raise
 
-            # Поиск автора
-            try:
-                authors = driver.find_element(By.CSS_SELECTOR, ".news-header__author-link")
-                if authors:
-                    author_text = authors.text.strip()
-                else:
-                    raise ValueError("Автор не найден")
-            except Exception as e:
-                logger.error(f"Ошибка при поиске Автора: {e}")
-                raise
-
             # Поиск изображения
             try:
                 div_element = driver.find_element(By.CLASS_NAME, 'news-header__image')
@@ -135,7 +124,6 @@ def news_pars(self):
                     continue
                 created = News.objects.create(
                     title=title_text,
-                    author=author_text,
                     image_url=image_url,
                     content=content_text,
                     category=category_obj,

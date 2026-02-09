@@ -198,10 +198,10 @@
 </div>
 
 <!-- Пагинация -->
-{% if page_obj.has_other_pages %}
+{% if news.has_other_pages %}
 <nav aria-label="Page navigation" class="mt-5">
     <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
+        {% if news.has_previous %}
         <li class="page-item">
             <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
                 <i class="fas fa-angle-double-left"></i>
@@ -214,12 +214,12 @@
         </li>
         {% endif %}
 
-        {% for num in page_obj.paginator.page_range %}
-            {% if num == page_obj.number %}
+        {% for num in news.paginator.page_range %}
+            {% if num == news.number %}
             <li class="page-item active">
                 <span class="page-link">{{ num }}</span>
             </li>
-            {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+            {% elif num > news.number|add:-3 and num < news.number|add:3 %}
             <li class="page-item">
                 <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
                     {{ num }}
@@ -228,7 +228,7 @@
             {% endif %}
         {% endfor %}
 
-        {% if page_obj.has_next %}
+        {% if news.has_next %}
         <li class="page-item">
             <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
                 <i class="fas fa-angle-right"></i>
@@ -244,7 +244,7 @@
 </nav>
 
 <div class="text-center text-muted mt-2">
-    <small>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</small>
+    <small>Страница {{ news.number }} из {{ news.paginator.num_pages }}</small>
 </div>
 {% endif %}
 
