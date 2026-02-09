@@ -38,7 +38,7 @@ class NewsCreateAPIView(APIView):
 
 class NewsCheckAPIView(APIView):
 
-    def get(self, request, news_id=None):
+    def get(self, news_id=None):
         logger.info(f"=== ПОЛУЧЕН GET ЗАПРОС ОТ БОТА ===")
         try:
             news = News.objects.get(pk=news_id)
